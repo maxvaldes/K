@@ -1,0 +1,809 @@
+
+import string
+# the string module contains some methods for manipulating strings.
+from random import shuffle
+# this is used to shuffle the elements in a list.  Note that it shuffles the list itself; it doesn't return a new list with them shuffled.
+from itertools import izip
+# izip is used to turn two lists into a dictionary.  One list is the inputs, the other list is the outputs.
+# presumably the two lists need to be the same length for this to work.
+import operator
+# The operator module is used to extract key values out of a list.
+import random
+# the random module is used to produce random integers
+from itertools import combinations
+import itertools
+import numpy
+
+# letterset records the letters a-zA-Z
+letterset = frozenset(string.ascii_letters)
+
+# letterfreq lists the letters a-z, listed in decreasing order of frequency, as given in HPS.
+letterfreq = list("etaonrishdlfcmugypwbvkxjqz")
+letterprops = [['e','.131'], ['t','.105'], ['a','.082'], ['o', '.080'], ['n', '.071'], ['r','.068'], ['i','.064'], ['s','.061'],['h', '.053'],['d','.038'],['l','.034'],['f','.029'],['c','.028'],['m','.025'],['u','.025'],['g','.020'],['y','.020'],['p','.020'],['w','.015'],['b','.014'],['v','.009'],['k','.004'],['x','.002'],['j','.001'],['q','.001'],['z','.001']]
+englishfreq = [0.082, 0.014, 0.028, 0.038, 0.131, 0.029, 0.02, 0.053, 0.064, 0.001, 0.004, 0.034, 0.025, 0.071, 0.08, 0.02, 0.001, 0.068, 0.061, 0.105, 0.025, 0.009, 0.015, 0.002, 0.02, 0.001]
+bigramfreq = [('th',168),('he',132),('an',92),('re',91),('er',88),('in',86),('on',71),('at',68),('nd',61),('st',53),('es',52),('en',51),('of',49),('te',46),('ed',46)]
+#trigramfreq is based on data from http://www.cryptograms.org/letter-frequencies.php
+trigramfreq = ['the', 'and', 'tha', 'ent', 'ing', 'ion', 'tio', 'for', 'nde', 'has', 'nce', 'edt', 'tis', 'oft', 'sth', 'men']
+
+#The following data was used in conjunction with the Pohlig-Hellman lab.  It consists of a list of 4-tuples [p,A,B,Y], where p is a prime, A,B are as in the Diffie-Hellman key exchange, and Y is some string that was encrypted using a Vigenere cipher with key k (k as in the Diffie-Hellman key exchange as well).
+public_data_list = public_data_list = [[812327490951948449,660180355270004747,140310375513017448,'DPVCYNRBAHMHYVR'],[3395973174873589, 1353627741480332,2402690956377885,'SKAXNLE'],[84890426468855618858129,38062661659751362935597,3649753538851519241196, 'DVEYEUAYJLXFDENORODODRVIIAVHVMQ'],[85877159637863900617439900751631108747834529963, 38017285367630865804727156977725431744225871223,47593784941795844490217081550277860407536824827,'CXPEEUJZPDXVLJP'],[9493916205588359862962849, 1152921504606846976,3730932558893492713953854, 'EHYMDFQITQANLNHMMTJNSKCWMAWVYOBUQK'],[85877159637863900617439900751631108747834529963, 38017285367630865804727156977725431744225871223, 47593784941795844490217081550277860407536824827,'CXPEEUJZPDXVLJP'],[99043015494659887583152681453073, 65395751542241823755166240514674, 25381683018799197859028426855626,'OZPUDRORUOYBZKADRUVEWC'],[74215110362876349224208778655715748283284489118297, 39675474322626623170708680286252557173804528335045, 58727249559709311856506214170566949199712326079272,'DRFNDQASSDASLJGCZGUYPWEGYPVGKMSLWMLO'],[9440058604531724526791123, 3161348132662125131068029, 3406905004070922127840593,'DPVEFVBVIUKLWZWMSZP'],[33928722084397066223022343606378427, 21472205075638862586796030580287952, 25961824513976385427756368166970928, 'YOCKGVONKDNCPFPZUYH'],[8111693724734227112104283,4257484950709304330835378,421983169298429104065614,'OFAGZZPZLEUCIMLJINEYSXDWTJSZQUWQHEQMTRZGQTWWDLXLWPPOFLKBJCMWHIDXVUQVZNFTQNRQSPSSLGWNRTTRJGUEQKMM'],[621434496851394077928877, 183156701482380690005611, 352026489036368687212458,'PTBDRUJYQZQKLW'],[4045922307956646150289, 2116683599491787688679, 2168263965946805676855, 'BKITEYDOGCJMUBVQWKCMNFBBQUKFYSOKZIGGIXBGWGOLUFL'], [561015542756089583904487995791, 91837697758880459033690218678, 257444923699125638666195259838,'IFPQZMIABP'],[71939093799530223626329541306780389, 58777177748384110160013910146039425, 66070889796708136004194107715168253,'YOYTHCCVXLLGJ'], [2821989862848821150807,936600721346208745474,1636475424865157664229, 'JWMVPEJBHSCSFQIFVDXHJOYXOZRRMTJWMKIZCOQWDMCZDPMFXGEUOQWQ'],[917177389801898196113257, 771289197390989640801302, 552340251991222838157828,'GUZQXJMTHQNCBOBOZSXMPPPHVZEZMRKONGDLMDNKHDUJDYBSSRBSXQZVVLNLBZYFXAWUHJQZVIAIKRHZEFBGVGEEPXUYJBQJZFZS'],[57055049223734614315943, 9801171046253403078840, 43159929133644475451798,'BGFPSXCMCOXLIFIPBDYONC'],[6958019727640498261741, 6201943777475532028940, 4143192798091706652998, 'MYYTCLBUNCITIAXSOJYRRDAREFIVSKTNFDJXCQINQDLXUUEBNUPJIXNNVPGZ'], [712524707989392539323, 345285209768644848029, 491987932975823505010,'GBUONVFQYYDICMHFMQIDHHCL'],[7470323321258138793083, 2704308883629327526946, 6112499215936540603516,'DQOENRSQE'],[26850889114305717667, 15995158371798654438, 457142569036033719,'LUYZEGXUQIAYNLLRFAKNJYAUULEVAQL'],[84380795417651660767241, 8326806360290713306730, 39128268241372396560584,'NZMCLRNEIAYI'],[7181581797682776632887, 1343841678811809025778, 4006565181396060912395,'YWBGAKEKPBJCJXFPUP'],[31209319855807595417, 16665026176993330877, 14275636024131185594,'XMHPUEQOUQP'],[9935369153493012820172149, 6445586181027332679603385, 7270474530569109395202162,'DCMSFEUWYMZFNS'],[7443210227225824015452120019000862672831683, 3707162372039487555315739117323318080158525, 3220045493899372572954899099339447320505688,'GMWDZAXSJQIKORBPIULCM'], [6150020975942076927347, 2178351229815388591321, 3638122524607723290823, 'LQFZITXMHHSQELTVKTZRCMUBXHFRWPRUWALEGMUZUDFQBCRFWSVDSIUWHNAGPCAUVZTPQAKMIHTHNERTVWLEHAKUXDRPDCRBEFYRSK'],[2389139579280941939, 1278170729603264727, 1927609888084667565,'KLBXRSHXXS'],[693247014808657, 116212066045024, 649083216037859,'KIDGBULFAKWBJBZ'],[9938347947808000077793, 3574001381290883522299, 2677012154340272030373,'KBXPGFPGULSU'],[921153040191287, 635609504606857, 344970322992623,'WLKZCPLIVVKXZISFRZZVWJXSHYSWBKGJEYHYNGWLGZVAHPB']]
+
+# this gets some data that is associated with the Pohlig-Hellman algorithm
+def get_pohlig_hellman():
+    return random.choice(public_data_list)
+
+def get_prime_powers(N):
+    factorlist = factor(N)
+    strholder = str(N) + " = "
+    for (a,b) in factorlist:
+        strholder += str(a^b)
+        strholder += " * "
+    print strholder[:-2]
+
+# this function removes all punctuation and spaces from X, and makes all the letters lowercase.
+def onlyletters(X):
+    return filter(letterset.__contains__, X).lower()
+
+def shift(X,n):
+   return shiftencrypt(X,n)
+
+def randomint(d):
+    """Returns a random integer with d digits"""
+    return random.randint(10^(d-1),10^d)
+
+def get_RSA_mod(d):
+    holder = 0
+    while len(holder.digits(10)) != d:
+        d1 = ceil(d/2)
+        d2 = d-d1+random.randint(0,1)
+        p = next_prime(randomint(d1))
+        q = next_prime(randomint(d2))
+        holder = p*q
+    return holder
+
+def factor_base(B):
+    holderlist = []
+    for i in range(2,B+1):
+        if is_prime_power(i):
+            holderlist.append(i)
+    return holderlist
+
+
+def get_sieve_mod(d):
+    good = False
+    while not good:
+        n = get_RSA_mod(d)
+        good = True
+        goodtemp = False
+        b = floor(sqrt(n))
+        for i in range(0,100):
+            templist = factor(Integer(pow(b+i,2,n)))
+            if templist[-1][0] < 250:
+                for pr in templist:
+                    if (pr[1]%2) == 1:
+                        goodtemp = True
+        if not goodtemp:
+            good = False
+    return n
+
+#Currently this function doesn't use any cleverness for the sieving.  So for example even though 221 equiv 2 mod 3, it still tries to sieve out 3s.
+#Also, note that for bigger values of n, we should switch from pow to simple subtraction of n.
+
+def explicit_qsieve(n,length,factorbase):
+    strt = floor(sqrt(n))+1
+    headerlist = []
+    holderlist = []
+    for i in range(0,length):
+        headerlist.append(strt+i)
+        holderlist.append(Integer(pow(strt+i,2,n)))
+    holderstring = '<table border="0"><tr><td> i: </td>'
+    for elt in headerlist:
+        holderstring += '<td> '+str(elt)+' <hr></td>'
+    holderstring += '</tr><tr><td> pow(i,2,'+ str(n) +'): </td>'
+    for elt in holderlist:
+        holderstring += '<td> '+str(elt)+' </td>'
+    holderstring += '</tr>'
+    for term in factorbase:
+        holderstring += '<tr>'
+        p = factor(term)[0][0]
+        holderstring += '<td> '+str(term)+' </td>'
+        newholderlist = []
+        newholderstring = ""
+        for elt in holderlist:
+            if (Integer(elt)%p) == 0:
+                holderstring += '<td><FONT COLOR="0000CD"> â†“'+str(p)+'</FONT> </td>'
+                newholderlist.append(Integer(elt)/Integer(p))
+                if newholderlist[-1] == 1:
+                    newholderstring += '<td><FONT COLOR="FF0000"> '+str(newholderlist[-1]) +' </FONT></td>'
+                else:
+                    newholderstring += '<td> '+str(newholderlist[-1])+' </td>'
+            else:
+                holderstring += '<td> </td>'
+                newholderlist.append(elt)
+                if elt == 1:
+                    newholderstring += '<td><FONT COLOR="FF0000"> '+str(newholderlist[-1]) +' </FONT></td>'
+                else:
+                    newholderstring += '<td> '+str(elt)+ ' </td>'
+        holderstring += '</tr><tr><td> </td>'
+        holderlist = newholderlist
+        holderstring += newholderstring
+        holderstring += '</tr>'
+    holderstring += '<tr> <td>  </td> '    
+    for elt in headerlist:
+        holderstring += '<td> <hr> </td>'
+    holderstring += '</tr>'
+    holderstring += '<tr> <td> i </td> '    
+    for elt in headerlist:
+        holderstring += '<td> '+str(elt)+' </td>'
+    holderstring += '</tr>'
+    holderstring += '</table>'
+    html(holderstring)
+
+
+def interactive_sieve(n):
+   @interact
+   def _(number_of_squares = selector(range(0,101), default=0), factor_base_bound = selector(range(0,260),default=0)):
+       b = factor_base_bound
+       length = number_of_squares
+       explicit_qsieve(n,length,factor_base(b))
+
+def sieve_matrix(n,smooth_list):
+    if len(smooth_list)>30:
+        print "WARNING:  SIZE 30 is the maximum"
+    button_vals = ["Yes","No"]
+    color_dict = {button_vals[0]:"000000",button_vals[1]:"C0C0C0"}
+    primeholder = []
+    for elt in smooth_list:
+        primelist = factor(Integer(pow(elt,2,n)))
+        for pr in primelist:
+            if pr[0] not in primeholder:
+                primeholder.append(pr[0])
+    primeholder = sorted(primeholder)
+    @interact(layout = [["i0","i5","i10","i15","i20","i25"],["i1","i6","i11","i16","i21","i26"],["i2","i7","i12","i17","i22","i27"],["i3","i8","i13","i18","i23","i28"],["i4","i9","i14","i19","i24","i29"]])
+    def _(i0=selector(button_vals,default="No",buttons=True),i1=selector(button_vals,default="No",buttons=True),i2=selector(button_vals,default="No",buttons=True), i3=selector(button_vals,default="No",buttons=True),i4=selector(button_vals,default="No",buttons=True),i5=selector(button_vals,default="No",buttons=True), i6=selector(button_vals,default="No",buttons=True),i7=selector(button_vals,default="No",buttons=True),i8=selector(button_vals,default="No",buttons=True), i9=selector(button_vals,default="No",buttons=True),i10=selector(button_vals,default="No",buttons=True),i11=selector(button_vals,default="No",buttons=True), i12=selector(button_vals,default="No",buttons=True),i13=selector(button_vals,default="No",buttons=True),i14=selector(button_vals,default="No",buttons=True), i15=selector(button_vals,default="No",buttons=True),i16=selector(button_vals,default="No",buttons=True),i17=selector(button_vals,default="No",buttons=True), i18=selector(button_vals,default="No",buttons=True),i19=selector(button_vals,default="No",buttons=True),i20=selector(button_vals,default="No",buttons=True), i21=selector(button_vals,default="No",buttons=True),i22=selector(button_vals,default="No",buttons=True),i23=selector(button_vals,default="No",buttons=True), i24=selector(button_vals,default="No",buttons=True),i25=selector(button_vals,default="No",buttons=True),i26=selector(button_vals,default="No",buttons=True), i27=selector(button_vals,default="No",buttons=True),i28=selector(button_vals,default="No",buttons=True),i29=selector(button_vals,default="No",buttons=True)):
+        holder_string = '<table border="1"><tr><td>prime:</td>'
+        totallist = []
+        for elt in primeholder:
+            holder_string += '<td>'+str(elt)+'</td>'
+            totallist.append(0)
+        holder_string += '</tr>'
+        for elt in smooth_list:
+            place = smooth_list.index(elt)
+            if button_vals.index(eval("i"+str(place))) == 0:
+                counted = True
+            else:
+                counted = False
+            prefix = '<td><FONT COLOR ="'+color_dict[eval("i"+str(place))]+'">'
+            holder_string += '<tr>'+prefix+"i"+str(place)+"="+str(elt)+'</FONT></td>'
+            primelist = factor(Integer(pow(elt,2,n)))
+            explist = []
+            for pr in primeholder:
+                explist.append(0)
+            for pr in primelist:
+                i = primeholder.index(pr[0])
+                explist[i] = pr[1]
+                if counted:
+                    totallist[i] += pr[1]
+            for exp in explist:
+                holder_string += prefix+str(exp)+'</FONT></td>'
+            holder_string += '</tr>'
+        prefix = '<td><FONT SIZE="+2" COLOR ="'+color_dict[button_vals[0]]+'"><b>'
+        holder_string += '<tr>'+prefix+'Total:</FONT></b></td>'
+        for elt in totallist:
+            holder_string += prefix+str(elt)+'</FONT></b></td>'
+        holder_string += '</tr>'
+        holder_string += '</table>'
+        html(holder_string)
+
+def baby_step_pohlig(p,q,g,A,n):
+    N = Integers(p)(g).multiplicative_order()
+    return baby_step(p,pow(g,Integer(N/q),p),pow(A,Integer(N/q),p),n)
+
+def giant_step_pohlig(p,q,g,A,n):
+    N = Integers(p)(g).multiplicative_order()
+    return giant_step(p,pow(g,Integer(N/q),p),pow(A,Integer(N/q),p),n)
+
+def baby_step(p,g,A,n):
+    return [pow(g,i,p) for i in range(0,n+1)]
+
+# this wasn't quite right to start out: it should have included the number we're trying to find the discrete logarithm for.
+# for now, I've patched it so that it finds the discrete logarithm for 19.
+def giant_step(p,g,A,n):
+    return [(A*pow(g,-i*n,p))%p for i in range(0,n+1)]
+
+def collision(triallist,triallist2):
+    valdict = dict((val, idx) for idx, val in enumerate(triallist))
+    for idx2, elt in enumerate(triallist2):
+       if elt in valdict:
+           return (valdict[elt], idx2)
+       
+# This function simply computes the gcd of each number 0 to n-1 with n.
+def naive_phi(n):
+    holder = 0
+    for i in range(0,n):
+        if gcd(i,n) == 1:
+            holder += 1
+    return holder
+
+# This function finds the smallest prime factor of n by trial division.
+def naive_smallest_factor(n):
+    j = 2
+    while n%j != 0:
+        j = next_prime(j)
+    return j
+
+def naive_dlog(g,A,p):
+    i = 0
+    while pow(g,i,p) != A:
+        i += 1
+    print i
+
+
+# this function encrypts the string X using a shift cipher (also known as a Caesar cipher).
+# it currently prevents a shift of 0.
+def shiftencrypt(X,n=-1):
+   """This function encrypts a string X by shifting each character up by n characters, so for example, 'g' shifted up by 3 letters is 'j'. The output is returned in capital letters, to maintain our convention of using capital letters for ciphertext."""
+   X = onlyletters(X).upper()
+   if n == -1:
+      shiftamt = random.randint(1,25)
+   else:
+      shiftamt = n
+   output = ''.join(chr((ord(ch)-ord('A')+shiftamt)%26+ord('A')) for ch in X)
+   return output
+
+# this function returns a dictionary which describes the encryption
+# for a substitution cipher.
+# for example, if the dictionary is called dict, and we want to know
+# how to encrypt the letter "c", we can evaluate dict['c'].
+def subcipherdict():
+   alph = string.ascii_lowercase
+   beta = list(alph)
+   shuffle(beta)
+   outputdict = dict(izip(alph, beta))
+   return outputdict
+
+def stringtoint(X):
+    X = onlyletters(X)
+    s = len(X)
+    output = 26^s
+    for i in range(0,len(X)):
+        s -= 1
+        output += (26^s)*(ord(X[i])-ord('a'))
+    return output
+    
+def inttostring(n):
+    terms = n.digits(26)
+    terms.pop()
+    X = ""
+    while len(terms) > 0:
+        X += chr(terms.pop()+ord('a'))
+    return X
+
+def linearencrypt(X,size=3,num = 10):
+    p = next_prime(random.randint(26^size, 26^(size + 1)))
+    k = random.randint(int(p/2),p-1)
+    n = stringtoint(X)
+    holder = []
+    for term in n.digits(p):
+        holder.append((term*k)%p)
+    known = []
+    for i in range(0,num):
+        m = random.randint(0,p)
+        known.append([m,(k*m)%p])
+    return [known,holder]
+    
+def lineardecrypt(terms,k,p):
+    d = inverse_mod(k,p)
+    holder = []
+    for elt in terms:
+        holder.append((elt*d)%p)
+    num = 0
+    index = 0
+    for elt in holder:
+        num += elt*p^index
+        index += 1
+    return inttostring(num)
+
+def randomlinear():
+    return linearencrypt(random.choice(plainquotes))
+
+def homophonicdict():
+      amounts = [4,4,4,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1]
+      homletters = [chr(i) for i in [33,35,36,37,38,40,41,42,43,91,93,94]]+[chr(i) for i in range(48,91)]
+      shuffle(homletters)
+      alph = string.ascii_lowercase
+      beta = [[homletters.pop() for i in range(0,n)] for n in amounts]
+      outputdict = dict(izip(alph,beta))
+      return outputdict
+
+def randomshift():
+    return shiftencrypt(random.choice(plainquotes))
+
+def randomsub():
+    return subencrypt(random.choice(plainquotes))
+
+def randomsubknown():
+   return subencrypt(random.choice(plainquotes)+"yourparrot")
+
+def randomvigenere(n = 0):
+    if n == 0:
+        return vigenereencrypt(random.choice(plainquotes))
+    else:
+        shifts = []
+        for i in range(0,n):
+          shifts.append(chr(random.randint(1,25)+ord('A')))
+    return vigenereencrypt(random.choice(plainquotes),''.join(shifts))
+
+def isprimroot(p, factorlist, g):
+  prim = True
+  for elt in factorlist:
+    if pow(g,(p-1)/elt[0],p) == 1:
+      prim = False
+  if prim: 
+    print g, "is a primitive root"
+  else:
+    print g, "is not a primitive root"
+
+def randomhomophonic():
+    return homophonicencrypt(random.choice(plainquotes))
+
+def randomautokey():
+    return autokeyencrypt(random.choice(plainquotes))
+
+def homophonicencrypt(X):
+      X = onlyletters(X)
+      subdict = homophonicdict()
+      output = ''.join(random.choice(subdict[ch]) for ch in X)
+      return output
+
+#this function encrypts the string X using a randomly chosen dict from subcipherdict().
+def subencrypt(X):
+   X = onlyletters(X)
+   subdict = subcipherdict()
+   output = ''.join(subdict[ch] for ch in X)
+   return output.upper()
+
+
+
+def getfreq(X):
+   X = onlyletters(X).upper()
+   cipherfreq = countsubstrings(X,1)
+   for ch in letterset:
+      if ch.isupper() and ch not in cipherfreq:
+         cipherfreq[ch] = 0
+   totalchars = len(X)
+   heightlist = []
+   for i in range(ord('A'),ord('Z')+1):
+      heightlist.append((cipherfreq[chr(i)]/totalchars)+.0)
+   return heightlist
+
+def vigenereencrypt(X, keyword = ""):
+      X = onlyletters(X).upper()
+      if len(keyword) != 0:
+            keyword = onlyletters(keyword).lower()
+            keylength = len(keyword)
+            shifts = [ord(ch) - ord('a') for ch in keyword]
+      else:
+            keylength = random.randint(5,8)
+            shifts = []
+            for i in range(0,keylength):
+                  shifts.append(random.randint(1,25))
+      output = ''.join(chr((ord(X[i])-ord('A')+shifts[i%keylength])%26+ord('A')) for i in range(0,len(X)))
+      return output
+
+
+def autokeyencrypt(X, keyword = ""):
+      X = onlyletters(X).upper()
+      if len(keyword) != 0:
+            keyword = onlyletters(keyword).lower()
+            keylength = len(keyword)
+            shifts = [ord(ch) - ord('a') for ch in keyword]
+      else:
+            keylength = random.randint(5,8)
+            shifts = []
+            for i in range(0,keylength):
+                  shifts.append(random.randint(1,25))
+      shifts += [ord(ch) - ord('A') for ch in X]
+      output = ''.join(chr((ord(X[i])-ord('A')+shifts[i])%26+ord('A')) for i in range(0,len(X)))
+      return output
+
+def enciphervigenere(X,key):
+  X = onlyletters(X)
+  if isinstance(key,str):
+    key = stringtoint(key)
+  if isinstance(key,(int,Integer)):
+    key = key.digits(26)
+  if isinstance(key,list):
+    return deciphervigenere(X,[-elt for elt in key]).upper()
+
+def deciphervigenere(X,key):
+  X = onlyletters(X)
+  if isinstance(key,str):
+    key = stringtoint(key)
+  if isinstance(key,(int,Integer)):
+    key = key.digits(26)
+  X = X.upper()
+  keylength = len(key)
+  shifts = key
+  output = ''.join(chr((ord(X[i])-ord('A')-shifts[i%keylength])%26+ord('A')) for i in range(0,len(X)))
+  return output.lower()
+
+def comparetoenglish(X):
+   @interact
+   def _(shift_amount = selector(range(-25,26), default=0)):
+      cipherfreq = countsubstrings(X,1)
+      Y = ''.join(chr((ord(ch)-ord('A')+shift_amount)%26+ord('A')) for ch in X)
+      compareplots(Y,shift_amount)
+      
+def compareplots(Y,shift_amount):
+      # This was adapted from code found at http://www.packtpub.com/article/plotting-data-sage
+      import numpy
+      import matplotlib.pyplot as plt
+      data = numpy.array([8.15, 1.44, 2.76, 3.79,13.11, 2.92, 1.99, 5.26, 6.35, .13, .42, 3.39, 2.54, 7.1, 8, 1.98, .12, 6.83, 6.10, 10.47, 2.46, .92, 1.54, .17, 1.98, .08])
+      listholder = []
+      for i in range(0,26):
+          listholder.append(i+.5)
+      bar_centers = numpy.array(listholder)
+
+      # Plot
+      fig = plt.figure(figsize=(7,4)) # size in inches
+      plt.bar(bar_centers, data, 
+              width=1.0, align='center', color='orange', ecolor='black')
+      plt.ylabel('% frequency in English')
+
+      # Label ticks on x axis
+      axes = fig.gca()
+      axes.set_xticks(bar_centers)
+      axes.set_xticklabels(['a', 'b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'])
+      plt.savefig('Bar_Chart.png')
+      plt.close()
+
+      cipherfreq = countsubstrings(Y,1)
+      for ch in letterset:
+         if ch.isupper() and ch not in cipherfreq:
+            cipherfreq[ch] = 0
+      totalchars = len(Y)
+      heightlist = []
+      ticklabels = []
+      # The +.001 is just a hack to prevent the fact that if Z = 0, then the plot rescaled to take up 25 units, not 26.
+      for i in range(ord('A'),ord('Z')+1):
+         heightlist.append((100*cipherfreq[chr(i)]/totalchars)+.001)
+         ticklabels.append(chr(i))
+
+      data = numpy.array(heightlist)
+
+      # Plot
+      fig = plt.figure(figsize=(7,4)) # size in inches
+      plt.bar(bar_centers, data, 
+              width=1.0, align='center', color='blue', ecolor='black')
+      plt.ylabel('% frequency in the ciphertext')
+
+      # Label ticks on x axis
+      axes = fig.gca()
+      axes.set_xticks(bar_centers)
+      axes.set_xticklabels(ticklabels)
+      plt.savefig('Bar_Chart2.png')
+      plt.close()
+
+def shiftdecrypt(X,n):
+    Y = ''.join(chr((ord(ch)-ord('A')+n)%26+ord('A')) for ch in X)
+    print Y
+
+def breakshiftcipher(X):
+   @interact
+   def _(shift_amount = selector(range(-25,26), default=0)):
+      cipherfreq = countsubstrings(X,1)
+      Y = ''.join(chr((ord(ch)-ord('A')+shift_amount)%26+ord('A')) for ch in X)
+      compareplots(Y,shift_amount)
+      print Y
+
+# this function counts substrings of the string X of length n.  It returns a dictionary whose keys are the
+# substrings which occur and whose values are the number of times they occur.
+def countsubstrings(X,n):
+    subdict = {}
+    for i in range(0,len(X)-n+1):
+        if X[i:i+n] in subdict:
+            subdict[X[i:i+n]] += 1
+        else:
+            subdict[X[i:i+n]] = 1
+    return subdict
+    
+def ranksubstrings(X,n,entries = 20):
+    tempdict = countsubstrings(X,n)
+    return sorted(tempdict.iteritems(), key=operator.itemgetter(1), reverse = True)[0:entries]
+
+def breaksubcipher(X):
+   cipherfreq = countsubstrings(X,1)
+   for ch in letterfreq:
+        if ch not in cipherfreq:
+            cipherfreq[ch] = 0
+   totalchars = sum(cipherfreq.values())
+   for key in cipherfreq:
+       cipherfreq[key] = n(cipherfreq[key]/totalchars, digits = 2)
+   sorted_cipher = sorted(cipherfreq.iteritems(), key=operator.itemgetter(1), reverse=True)
+   @interact(layout = [['sub0', 'sub10', 'sub20'], ['sub1', 'sub11', 'sub21'], ['sub2', 'sub12', 'sub22'], ['sub3', 'sub13', 'sub23'],['sub4', 'sub14', 'sub24'], ['sub5', 'sub15', 'sub25'], ['sub6', 'sub16'], ['sub7', 'sub17'], ['sub8', 'sub18'], ['sub9', 'sub19']])
+   def _(sub0 = selector(list(sorted_cipher[0][0].upper())+letterfreq, default = sorted_cipher[0][0].upper()), 
+         sub1 = selector(list(sorted_cipher[1][0].upper())+letterfreq, default = sorted_cipher[1][0].upper()), 
+         sub2 = selector(list(sorted_cipher[2][0].upper())+letterfreq, default = sorted_cipher[2][0].upper()), 
+         sub3 = selector(list(sorted_cipher[3][0].upper())+letterfreq, default = sorted_cipher[3][0].upper()), 
+         sub4 = selector(list(sorted_cipher[4][0].upper())+letterfreq, default = sorted_cipher[4][0].upper()), 
+         sub5 = selector(list(sorted_cipher[5][0].upper())+letterfreq, default = sorted_cipher[5][0].upper()), 
+         sub6 = selector(list(sorted_cipher[6][0].upper())+letterfreq, default = sorted_cipher[6][0].upper()), 
+         sub7 = selector(list(sorted_cipher[7][0].upper())+letterfreq, default = sorted_cipher[7][0].upper()), 
+         sub8 = selector(list(sorted_cipher[8][0].upper())+letterfreq, default = sorted_cipher[8][0].upper()), 
+         sub9 = selector(list(sorted_cipher[9][0].upper())+letterfreq, default = sorted_cipher[9][0].upper()),
+         sub10 = selector(list(sorted_cipher[10][0].upper())+letterfreq, default = sorted_cipher[10][0].upper()), 
+         sub11 = selector(list(sorted_cipher[11][0].upper())+letterfreq, default = sorted_cipher[11][0].upper()), 
+         sub12 = selector(list(sorted_cipher[12][0].upper())+letterfreq, default = sorted_cipher[12][0].upper()), 
+         sub13 = selector(list(sorted_cipher[13][0].upper())+letterfreq, default = sorted_cipher[13][0].upper()), 
+         sub14 = selector(list(sorted_cipher[14][0].upper())+letterfreq, default = sorted_cipher[14][0].upper()), 
+         sub15 = selector(list(sorted_cipher[15][0].upper())+letterfreq, default = sorted_cipher[15][0].upper()), 
+         sub16 = selector(list(sorted_cipher[16][0].upper())+letterfreq, default = sorted_cipher[16][0].upper()), 
+         sub17 = selector(list(sorted_cipher[17][0].upper())+letterfreq, default = sorted_cipher[17][0].upper()), 
+         sub18 = selector(list(sorted_cipher[18][0].upper())+letterfreq, default = sorted_cipher[18][0].upper()), 
+         sub19 = selector(list(sorted_cipher[19][0].upper())+letterfreq, default = sorted_cipher[19][0].upper()),
+         sub20 = selector(list(sorted_cipher[20][0].upper())+letterfreq, default = sorted_cipher[20][0].upper()), 
+         sub21 = selector(list(sorted_cipher[21][0].upper())+letterfreq, default = sorted_cipher[21][0].upper()), 
+         sub22 = selector(list(sorted_cipher[22][0].upper())+letterfreq, default = sorted_cipher[22][0].upper()), 
+         sub23 = selector(list(sorted_cipher[23][0].upper())+letterfreq, default = sorted_cipher[23][0].upper()), 
+         sub24 = selector(list(sorted_cipher[24][0].upper())+letterfreq, default = sorted_cipher[24][0].upper()), 
+         sub25 = selector(list(sorted_cipher[25][0].upper())+letterfreq, default = sorted_cipher[25][0].upper())):
+      sub = (sub0, sub1, sub2, sub3, sub4, sub5, sub6, sub7, sub8, sub9, sub10, sub11, sub12, sub13, sub14, sub15, sub16, sub17, sub18, sub19, sub20, sub21, sub22, sub23, sub24, sub25)
+      for index in range(10):
+          if index <= 5:
+              Y = sub[index] + " ("+sorted_cipher[index][0].upper()+","+str(sorted_cipher[index][1]*100)+")"
+              while len(Y) < 13:
+                  Y += " "
+              Y += sub[index+10] + " ("+sorted_cipher[index+10][0].upper()+","+str(sorted_cipher[index+10][1]*100)+")"
+              while len(Y) < 26:
+                  Y += " "
+              Y += sub[index+20]+ " ("+sorted_cipher[index+20][0].upper()+","+str(sorted_cipher[index+20][1]*100)+")"
+              while len(Y) < 44:
+                  Y += " "
+              if index <= 1:
+                 Y += '<FONT COLOR="0000CD">('+letterprops[index][0]+","+str(float(letterprops[index][1])*100)+")" +  " ("+letterprops[index+10][0]+","+str(float(letterprops[index+10][1])*100)+") "+ " ("+letterprops[index+20][0]+","+str(float(letterprops[index+20][1])*100)+")</FONT>"
+              else:
+                 Y += '<FONT COLOR="0000CD">('+letterprops[index][0]+","+str(float(letterprops[index][1])*100)+")" +  "  ("+letterprops[index+10][0]+","+str(float(letterprops[index+10][1])*100)+") "+ " ("+letterprops[index+20][0]+","+str(float(letterprops[index+20][1])*100)+")</FONT>"
+              zholder = ""
+              if Y[0].islower():
+                 zholder += '<FONT COLOR="0000CD">'
+                 zholder += Y[0]
+                 zholder += '</FONT>'
+              else:
+                 zholder += Y[0]
+              zholder += Y[1:13]
+              if Y[13].islower():
+                 zholder += '<FONT COLOR="0000CD">'
+                 zholder += Y[13]
+                 zholder += '</FONT>'
+              else:
+                 zholder += Y[13]
+              zholder += Y[14:26]
+              if Y[26].islower():
+                 zholder += '<FONT COLOR="0000CD">'
+                 zholder += Y[26]
+                 zholder += '</FONT>'
+              else:
+                 zholder += Y[26]
+              zholder += Y[27:]
+              html(zholder)
+          else:
+              zholder = ""
+              Y = sub[index] + " ("+sorted_cipher[index][0].upper()+","+str(sorted_cipher[index][1]*100)+")"
+              while len(Y) < 13:
+                  Y += " "
+              Y += sub[index+10] + " ("+sorted_cipher[index+10][0].upper()+","+str(sorted_cipher[index+10][1]*100)+")"
+              while len(Y) < 44:
+                  Y += " "
+              Y += '<FONT COLOR="0000CD">('+letterprops[index][0]+","+str(float(letterprops[index][1])*100)+")" +  "  ("+letterprops[index+10][0]+","+str(float(letterprops[index+10][1])*100)+")</FONT>"
+              if Y[0].islower():
+                 zholder += '<FONT COLOR="0000CD">'
+                 zholder += Y[0]
+                 zholder += '</FONT>'
+              else:
+                 zholder += Y[0]
+              zholder += Y[1:13]
+              if Y[13].islower():
+                 zholder += '<FONT COLOR="0000CD">'
+                 zholder += Y[13]
+                 zholder += '</FONT>'
+              else:
+                 zholder += Y[13]
+              zholder += Y[14:]
+              html(zholder)
+      plainholder = ['<div style=â€word-wrap: break-allâ€>']
+      cipherholder = ['<div style=â€word-wrap: break-allâ€>']
+      for chr in X:
+         cipherholder.append(chr)
+         if chr == sorted_cipher[0][0]:
+             if sub0.isupper():
+                 plainholder.append(sub0)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub0+'</FONT>')
+         elif chr == sorted_cipher[1][0]:
+             if sub1.isupper():
+                 plainholder.append(sub1)
+             else:
+                plainholder.append('<FONT COLOR="0000CD">'+sub1+'</FONT>')
+         elif chr == sorted_cipher[2][0]:
+             if sub2.isupper():
+                 plainholder.append(sub2)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub2+'</FONT>')
+         elif chr == sorted_cipher[3][0]:
+             if sub3.isupper():
+                 plainholder.append(sub3)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub3+'</FONT>')
+         elif chr == sorted_cipher[4][0]:
+             if sub4.isupper():
+                 plainholder.append(sub4)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub4+'</FONT>')
+         elif chr == sorted_cipher[5][0]:
+             if sub5.isupper():
+                 plainholder.append(sub5)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub5+'</FONT>')
+         elif chr == sorted_cipher[6][0]:
+             if sub6.isupper():
+                 plainholder.append(sub6)
+             else:
+                plainholder.append('<FONT COLOR="0000CD">'+sub6+'</FONT>')
+         elif chr == sorted_cipher[7][0]:
+             if sub7.isupper():
+                 plainholder.append(sub7)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub7+'</FONT>')
+         elif chr == sorted_cipher[8][0]:
+             if sub8.isupper():
+                 plainholder.append(sub8)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub8+'</FONT>')
+         elif chr == sorted_cipher[9][0]:
+             if sub9.isupper():
+                 plainholder.append(sub9)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub9+'</FONT>')
+         elif chr == sorted_cipher[10][0]:
+             if sub10.isupper():
+                 plainholder.append(sub10)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub10+'</FONT>')
+         elif chr == sorted_cipher[11][0]:
+             if sub11.isupper():
+                 plainholder.append(sub11)
+             else:
+                plainholder.append('<FONT COLOR="0000CD">'+sub11+'</FONT>')
+         elif chr == sorted_cipher[12][0]:
+             if sub12.isupper():
+                 plainholder.append(sub12)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub12+'</FONT>')
+         elif chr == sorted_cipher[13][0]:
+             if sub13.isupper():
+                 plainholder.append(sub13)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub13+'</FONT>')
+         elif chr == sorted_cipher[14][0]:
+             if sub14.isupper():
+                 plainholder.append(sub14)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub14+'</FONT>')
+         elif chr == sorted_cipher[15][0]:
+             if sub15.isupper():
+                 plainholder.append(sub15)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub15+'</FONT>')
+         elif chr == sorted_cipher[16][0]:
+             if sub16.isupper():
+                 plainholder.append(sub16)
+             else:
+                plainholder.append('<FONT COLOR="0000CD">'+sub16+'</FONT>')
+         elif chr == sorted_cipher[17][0]:
+             if sub17.isupper():
+                 plainholder.append(sub17)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub17+'</FONT>')
+         elif chr == sorted_cipher[18][0]:
+             if sub18.isupper():
+                 plainholder.append(sub18)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub18+'</FONT>')
+         elif chr == sorted_cipher[19][0]:
+             if sub19.isupper():
+                 plainholder.append(sub19)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub19+'</FONT>')
+         elif chr == sorted_cipher[20][0]:
+             if sub20.isupper():
+                 plainholder.append(sub20)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub20+'</FONT>')
+         elif chr == sorted_cipher[21][0]:
+             if sub21.isupper():
+                 plainholder.append(sub21)
+             else:
+                plainholder.append('<FONT COLOR="0000CD">'+sub21+'</FONT>')
+         elif chr == sorted_cipher[22][0]:
+             if sub22.isupper():
+                 plainholder.append(sub22)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub22+'</FONT>')
+         elif chr == sorted_cipher[23][0]:
+             if sub23.isupper():
+                 plainholder.append(sub23)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub23+'</FONT>')
+         elif chr == sorted_cipher[24][0]:
+             if sub24.isupper():
+                 plainholder.append(sub24)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub24+'</FONT>')
+         elif chr == sorted_cipher[25][0]:
+             if sub25.isupper():
+                 plainholder.append(sub25)
+             else:
+                 plainholder.append('<FONT COLOR="0000CD">'+sub25+'</FONT>')
+      plainholder.append('</div>')
+      cipherholder.append('</div>')
+      i = 100
+      while i < len(plainholder):
+         plainholder.insert(i,'<br>')
+         cipherholder.insert(i,'<br>')
+         i += 100
+      strplainholder = ''.join(plainholder)
+      strcipherholder = ''.join(cipherholder)
+      html('<br>'+strplainholder)
+      html(strcipherholder.upper())
+      cipherbigrams = ranksubstrings(X.upper(),2,20)
+      html("<br>Most common bigrams in the ciphertext (and number of occurrences):<br>")
+      html(cipherbigrams[0:8])
+      html(cipherbigrams[8:16])
+      html(cipherbigrams[16:20])
+      html("<br>Most common bigrams in English (and expected occurrences in text of this length):<br>")
+      # the bigram frequencies are given per thousand words.  Using the estimate of 5 as the average length of a word, we rescale.
+      holderlist = [(elt[0],floor(len(X)*elt[1]/5000)) for elt in bigramfreq]
+      html('<FONT COLOR="0000CD">'+str(holderlist[0:8])+'</FONT>')
+      html('<FONT COLOR="0000CD">'+str(holderlist[8:])+'</FONT>')
+      ciphertrigrams = ranksubstrings(X.upper(),3,8)
+      html("<br>Most common trigrams in the ciphertext:<br>")
+      html(ciphertrigrams)
+      html("<br>Most common trigrams in English:<br>")
+      html('<FONT COLOR="0000CD">'+str(trigramfreq)+'</FONT>')
+
+# The following function finds all substrings of length n which occur multiple times and then identifies the gaps separating the multiple occurrences.
+def findgaplengths(X,n):
+      strdict = {}
+      for i in range(0,len(X)-n+1):
+            if X[i:i+n] in strdict:
+                  strdict[X[i:i+n]].append(i)
+            else:
+                  strdict[X[i:i+n]] = [i]
+      gapholder = []
+      for key in strdict:
+            gapholder += [abs(a-b) for a,b in combinations(strdict[key],2)]
+      gapholder.sort()
+      return gapholder
+
+def coincidences(X,a,b):
+      holder = []
+      for i in range(a,b):
+            count = 0
+            for j in range(0,len(X)-i):
+                  if X[j] == X[j+i]:
+                        count += 1
+            holder.append(count)
+      return holder
+                        
+
+def separate(X,a,m):
+      holder = []
+      for i in range(0,len(X)):
+            if (i%m) == (a%m):
+                  holder.append(X[i])
+      output = ''.join(holder)
+      return output
+      
+                  
+plainquotes = ["in modern cryptographic language the ring settings did not actually contribute entropy to the key used for encrypting the message rather the ring settings were part of a separate key along with the rest of the setup such as wheel order and plug settings used to encrypt an initialization vector for the message the session key consisted of the complete setup except for the ring settings plus the initial rotor positions chosen arbitrarily by the sender the message setting the important part of this session key was the rotor positions not the ring positions however by encoding the rotor position into the ring position using the ring settings additional variability was added to the encryption of the initialization vectorenigma was designed to be secure even if the rotor wiring was known to an opponent although in practice there was considerable effort to keep the wiring secret if the wiring is secret the total number of possible configurations has been calculated to be around approximately bits with known wiring and other operational constraints this is reduced to around  bits  users of enigma were confident of its security because of the large number of possibilities it was not then feasible for an adversary to even begin to try every possible configuration in a brute force attack", "most of the key was kept constant for a set time period typically a day however a different initial rotor position was used for each message a concept similar to an initialisation vector in modern cryptography the reason for this is that were a number of messages to be encrypted with identical or near identical settings termed in cryptanalysis as being in depth it would be possible to attack the messages using a statistical procedure such as friedmans index of coincidence the starting position for the rotors was transmitted just before the ciphertext usually after having been enciphered the exact method used was termed the indicator procedure it was design weakness and operator sloppiness in these indicator procedures that were two of the main reasons that breaking enigma messages was possible  one of the earliest indicator procedures was used by polish cryptanalysts to make the initial breaks into the enigma the procedure was for the operator to set up his machine in accordance with his settings list which included a global initial position for the rotors meaning ground setting perhaps the operator turned his rotors until aoh was visible through the rotor windows at that point the operator chose his own arbitrary starting position for that particular message an operator might select ein and these became the message settings for that encryption session the operator then typed ein into the machine twice to allow for detection of transmission errors the results were an encrypted indicator the ein typed twice might turn into nonsense which would be transmitted along with the message finally the operator then spun the rotors to his message settings ein in this example and typed the plaintext of the message", "cryptology prior to the modern age was almost synonymous with encryption the conversion of information from a readable state to apparent nonsense the sender retained the ability to decrypt the information and therefore avoid unwanted persons being able to read it since world war one and the advent of the computer the methods used to carry out cryptology have become increasingly complex and its application more widespread  modern cryptography follows a strongly scientific approach and designs cryptographic algorithms around computational hardness assumptions making such algorithms hard to break by an adversary such systems are not unbreakable in theory but it is infeasible to do so by any practical means these schemes are therefore computationally secure there exist information theoretically secure schemes that provably cannot be broken an example is the one time pad but these schemes are more difficult to implement than the theoretically breakable but computationally secure mechanisms  essentially all ciphers remained vulnerable to cryptanalysis using the frequency analysis technique until the development of the polyalphabetic cipher most clearly by leon battista alberti around the year  though there  is some indication that it was already known to al kindi alberti s innovation was to use different ciphers ie substitution alphabets for various parts of a message perhaps for each successive plaintext letter at the limit he also invented what was probably the first automatic cipher device a wheel which implemented a partial realization of his invention in the polyalphabetic vigenere cipher encryption uses a key word which controls letter substitution depending on which letter of the key word is used in the mid nineteenth century charles babbage showed that the vigenere cipher was vulnerable to kasiski examination but this was first published about ten years later by friedrich kasiski", "until modern times cryptography referred almost exclusively to encryption which is the process of converting ordinary information called plaintext into unintelligible gibberish called ciphertext decryption is the reverse in other words moving from the unintelligible ciphertext back to plaintext a cipher or cypher is a pair of algorithms that create the encryption and the reversing decryption the detailed operation of a cipher is controlled both by the algorithm and in each instance by a key this is a secret parameter ideally known only to the communicants for a specific message exchange context a cryptosystem is the ordered list of elements of finite possible plaintexts finite possible cyphertexts finite possible keys and the encryption and decryption algorithms which correspond to each key keys are important as ciphers without variable keys can be trivially broken with only the knowledge of the cipher used and are therefore useless or even counter productive for most purposes historically ciphers were often used directly for encryption or decryption without additional procedures such as authentication or integrity checks in colloquial use the term code is often used to mean any method of encryption or concealment of meaning however in cryptography code has a more specific meaning it means the replacement of a unit of plaintext ie a meaningful word or phrase with a code word for example wallaby replaces attack at dawn codes are no longer used in serious cryptography except incidentally for such things as unit designations eg bronco flight or operation overlord since properly chosen ciphers are both more practical and more secure than even the best codes and also are better adapted to computers",  "the earliest forms of secret writing required little more than local pen and paper analogs as most people could not read more literacy or literate opponents required actual cryptography the main classical cipher types are transposition ciphers which rearrange the order of letters in a message eg  hello world  becomes  ehlol owrdl  in a trivially simple rearrangement scheme and substitution ciphers which systematically replace letters or groups of letters with other letters or groups of letters eg fly at once becomes gmz bu podf by replacing each letter with the one following it in the latin alphabet simple versions of either have never offered much confidentiality from enterprising opponents an early substitution cipher was the caesar cipher in which each letter in the plaintext was replaced by a letter some fixed number of positions further down the alphabet suetonius reports that julius caesar used it with a shift of three to communicate with his generals atbash is an example of an early hebrew cipher the earliest known use of cryptography is some carved ciphertext on stone in egypt ca  bc but this may have been done for the amusement of literate observers rather than as a way of concealing information cryptography is recommended in the kama sutra as a way for lovers to communicate without inconvenient discovery the greeks of classical times are said to have known of ciphers eg the scytale transposition cipher claimed to have been used by the spartan military steganography ie hiding even the existence of a message so as to keep it confidential was also first developed in ancient times an early example from herodotus concealed a message a tattoo on a slaves shaved head under the regrown hair another greek method was developed by polybius now called the polybius square more modern examples of steganography include the use of invisible ink microdots and digital watermarks to conceal information", "in addition to encryption public key cryptography can be used to implement digital signature schemes a digital signature is reminiscent of an ordinary signature they both have the characteristic that they are easy for a user to produce but difficult for anyone else to forge digital signatures can also be permanently tied to the content of the message being signed they cannot then be  moved  from one document to another for any attempt will be detectable in digital signature schemes there are two algorithms: one for signing in which a secret key is used to process the message or a hash of the message or both and one for verification in which the matching public key is used with the message to check the validity of the signature rsa and dsa are two of the most popular digital signature schemes digital signatures are central to the operation of public key infrastructures and many network security schemes eg ssl tls many vpns etc  public key algorithms are most often based on the computational complexity of  hard  problems often from number theory for example the hardness of rsa is related to the integer factorization problem while diffie hellman and dsa are related to the discrete logarithm problem more recently elliptic curve cryptography has developed in which security is based on number theoretic problems involving elliptic curves because of the difficulty of the underlying problems most public key algorithms involve operations such as modular multiplication and exponentiation which are much more computationally expensive than the techniques used in most block ciphers especially with typical key sizes as a result public key cryptosystems are commonly hybrid cryptosystems in which a fast high quality symmetric key encryption algorithm is used for the message itself while the relevant symmetric key is sent with the message but encrypted using a public key algorithm similarly hybrid signature schemes are often used in which a cryptographic hash function is computed and only the resulting hash is digitally signed", "  the goal of cryptanalysis is to find some weakness or insecurity in a cryptographic scheme thus permitting its subversion or evasion it is a common misconception that every encryption method can be broken in connection with his wwii work at bell labs claude shannon proved that the one time pad cipher is unbreakable provided the key material is truly random never reused kept secret from all possible attackers and of equal or greater length than the message most ciphers apart from the one time pad can be broken with enough computational effort by brute force attack but the amount of effort needed may be exponentially dependent on the key size as compared to the effort needed to use the cipher in such cases effective security could be achieved if it is proven that the effort required ie  work factor  in shannon s terms is beyond the ability of any adversary this means it must be shown that no efficient method as opposed to the time consuming brute force method can be found to break the cipher since no such showing can be made currently as of today the one time pad remains the only theoretically unbreakable cipher there are a wide variety of cryptanalytic attacks and they can be classified in any of several ways a common distinction turns on what an attacker knows and what capabilities are available in a ciphertext only attack the cryptanalyst has access only to the ciphertext good modern cryptosystems are usually effectively immune to ciphertext only attacks in a known plaintext attack the cryptanalyst has access to a ciphertext and its corresponding plaintext or to many such pairs in a chosen plaintext attack the cryptanalyst may choose a plaintext and learn its corresponding ciphertext perhaps many times an example is gardening used by the british during wwii finally in a chosen ciphertext attack the cryptanalyst may be able to choose ciphertexts and learn their corresponding plaintexts also important often overwhelmingly so are mistakes generally in the design or use of one of the protocols involved see cryptanalysis of the enigma for some historical examples of this", " cryptanalysis of symmetric key ciphers typically involves looking for attacks against the block ciphers or stream ciphers that are more efficient than any attack that could be against a perfect cipher for example a simple brute force attack against des requires one known plaintext and  decryptions trying approximately half of the possible keys to reach a point at which chances are better than even the key sought will have been found but this may not be enough assurance a linear cryptanalysis attack against des requires  known plaintexts and approximately  des operations this is a considerable improvement on brute force attacks public key algorithms are based on the computational difficulty of various problems the most famous of these is integer factorization eg the rsa algorithm is based on a problem related to integer factoring but the discrete logarithm problem is also important much public key cryptanalysis concerns numerical algorithms for solving these computational problems or some of them efficiently ie in a practical time for instance the best known algorithms for solving the elliptic curve based version of discrete logarithm are much more time consuming than the best known algorithms for factoring at least for problems of more or less equivalent size thus other things being equal to achieve an equivalent strength of attack resistance factoring based encryption techniques must use larger keys than elliptic curve techniques for this reason public key cryptosystems based on elliptic curves have become popular since their invention in the mid seventies", "one or more cryptographic primitives are often used to develop a more complex algorithm called a cryptographic system or cryptosystem cryptosystems eg el gamal encryption are designed to provide particular functionality eg public key encryption while guaranteeing certain security properties eg chosen plaintext attack cpa security in the random oracle model cryptosystems use the properties of the underlying cryptographic primitives to support the system s security properties of course as the distinction between primitives and cryptosystems is somewhat arbitrary a sophisticated cryptosystem can be derived from a combination of several more primitive cryptosystems in many cases the cryptosystem s structure involves back and forth communication among two or more parties in space eg between the sender of a secure message and its receiver or across time eg cryptographically protected backup data such cryptosystems are sometimes called cryptographic protocols some widely known cryptosystems include rsa encryption schnorr signature el gamal encryption pgp etc more complex cryptosystems include electronic cash systems signcryption systems etc some more  theoretical  cryptosystems include interactive proof systems like zero knowledge proofs systems for secret sharing etc until recently most security properties of most cryptosystems were demonstrated using empirical techniques or using ad hoc reasoning recently there has been considerable effort to develop formal techniques for establishing the security of cryptosystems this has been generally called provable security the general idea of provable security is to give arguments about the computational difficulty needed to compromise some security aspect of the cryptosystem ie to any adversary", "  cryptography has long been of interest to intelligence gathering and law enforcement agencies secret communications may be criminal or even treasonous because of its facilitation of privacy and the diminution of privacy attendant on its prohibition cryptography is also of considerable interest to civil rights supporters accordingly there has been a history of controversial legal issues surrounding cryptography especially since the advent of inexpensive computers has made widespread access to high quality cryptography possible in some countries even the domestic use of cryptography is or has been restricted until  france significantly restricted the use of cryptography domestically though it has relaxed many of these in china a license is still required to use cryptography many countries have tight restrictions on the use of cryptography among the more restrictive are laws in belarus kazakhstan mongolia pakistan singapore tunisia and vietnam in the united states cryptography is legal for domestic use but there has been much conflict over legal issues related to cryptography one particularly important issue has been the export of cryptography and cryptographic software and hardware probably because of the importance of cryptanalysis in world war ii and an expectation that cryptography would continue to be important for national security many western governments have at some point strictly regulated export of cryptography after world war ii it was illegal in the us to sell or distribute encryption technology overseas in fact encryption was designated as auxiliary military equipment and put on the united states munitions list until the development of the personal computer asymmetric key algorithms ie public key techniques and the internet this was not especially problematic however as the internet grew and computers became more widely available high quality encryption techniques became well known around the globe as a result export controls came to be seen to be an impediment to commerce and to research", " in the s there were several challenges to us export regulations of cryptography one involved philip zimmermann s pretty good privacy pgp encryption program it was released in the us together with its source code and found its way onto the internet in june  after a complaint by rsa security then called rsa data security inc or rsadsi zimmermann was criminally investigated by the customs service and the fbi for several years no charges were ever filed however also daniel bernstein then a graduate student at uc berkeley brought a lawsuit against the us government challenging some aspects of the restrictions based on free speech grounds the  case bernstein v united states ultimately resulted in a  decision that printed source code for cryptographic algorithms and systems was protected as free speech by the united states constitution in  thirty nine countries signed the wassenaar arrangement an arms control treaty that deals with the export of arms and  dual use  technologies such as cryptography the treaty stipulated that the use of cryptography with short key lengths  bit for symmetric encryption  bit for rsa would no longer be export controlled cryptography exports from the us are now much less strictly regulated than in the past as a consequence of a major relaxation in  there are no longer very many restrictions on key sizes in us exported mass market software in practice today since the relaxation in us export restrictions and because almost every personal computer connected to the internet everywhere in the world includes us sourced web browsers such as mozilla firefox or microsoft internet explorer almost every internet user worldwide has access to quality cryptography ie when using sufficiently long keys with properly operating and unsubverted software etc in their browsers examples are transport layer security or ssl stack the mozilla thunderbird and microsoft outlook e mail client programs similarly can connect to imap or pop servers via tls and can send and receive email encrypted with s mime many internet users don t realize that their basic application software contains such extensive cryptosystems these browsers and email programs are so ubiquitous that even governments whose intent is to regulate civilian use of cryptography generally don t find it practical to do much to control distribution or use of cryptography of this quality so even when such laws are in force actual enforcement is often effectively impossible", "  cryptography is central to digital rights management drm a group of techniques for technologically controlling use of copyrighted material being widely implemented and deployed at the behest of some copyright holders in  american president bill clinton signed the digital millennium copyright act dmca which criminalized all production dissemination and use of certain cryptanalytic techniques and technology now known or later discovered specifically those that could be used to circumvent drm technological schemes this had a noticeable impact on the cryptography research community since an argument can be made that any cryptanalytic research violated or might violate the dmca similar statutes have since been enacted in several countries and regions including the implementation in the eu copyright directive similar restrictions are called for by treaties signed by world intellectual property organization member states the united states department of justice and fbi have not enforced the dmca as rigorously as had been feared by some but the law nonetheless remains a controversial one niels ferguson a well respected cryptography researcher has publicly stated that he will not release some of his research into an intel security design for fear of prosecution under the dmca both alan cox longtime number  in linux kernel development and professor edward felten and some of his students at princeton have encountered problems related to the act dmitry sklyarov was arrested during a visit to the us from russia and jailed for five months pending trial for alleged violations of the dmca arising from work he had done in russia where the work was legal in  the cryptographic keys responsible for blu ray and hd dvd content scrambling were discovered and released onto the internet in both cases the mpaa sent out numerous dmca takedown notices and there was a massive internet backlash triggered by the perceived impact of such notices on fair use and free speech", " in mathematics the four color theorem or the four color map theorem states that given any separation of a plane into contiguous regions producing a figure called a map no more than four colors are required to color the regions of the map so that no two adjacent regions have the same color two regions are called adjacent only if they share a border point that is not shared with a third region for example utah and arizona are adjacent but utah and new mexico which only share a point that also belongs to arizona and colorado are not despite the motivation from coloring political maps of countries the theorem is not of particular interest to mapmakers according to an article by the math historian kenneth may wilson    maps utilizing only four colours are rare and those that do usually require only three books on cartography and the history of mapmaking do not mention the four color property  three colors are adequate for simpler maps but an additional fourth color is required for some maps such as a map in which one region is surrounded by an odd number of other regions that touch each other in a cycle the five color theorem which has a short elementary proof states that five colors suffice to color a map and was proven in the late th century heawood  however proving that four colors suffice turned out to be significantly harder a number of false proofs and false counterexamples have appeared since the first statement of the four color theorem in ", "the question is whether for all problems for which a computer can verify a given solution quickly that is in polynomial time it can also find that solution quickly the former describes the class of problems termed np whilst the latter describes p the question is whether or not all problems in np are also in p this is generally considered the most important open question in mathematics and theoretical computer science as it has far reaching consequences in mathematics biology philosophy and cryptography see p versus np problem proof consequences if the question of whether p equals np were to be answered affirmatively it would trivialise the rest of the millennium prize problems and indeed all but the unprovable propositions in mathematics because they would all have direct solutions easily solvable by a formal system if p equals np then the world would be a profoundly different place than we usually assume it to be there would be no special value in creative leaps no fundamental gap between solving a problem and recognizing the solution once it is found everyone who could appreciate a symphony would be mozart everyone who could follow a step by step argument would be gauss most mathematicians and computer scientists expect that p does not equal np  the official statement of the problem was given by stephen cook", "  in mathematics the riemann hypothesis proposed by bernhard riemann  is a conjecture about the distribution of the zeros of the riemann zeta function which states that all non trivial zeros have real part   the name is also used for some closely related analogues such as the riemann hypothesis for curves over finite fields the riemann hypothesis implies results about the distribution of prime numbers that are in some ways as good as possible along with suitable generalizations it is considered by some mathematicians to be the most important unresolved problem in pure mathematics bombieri  the riemann hypothesis is part of problem  along with the goldbach conjecture in hilbert s list of  unsolved problems and is also one of the clay mathematics institute millennium prize problems since it was formulated it has withstood concentrated efforts from many outstanding mathematicians in  pierre deligne proved an analogue of the riemann hypothesis for zeta functions of varieties defined over finite fields the full version of the hypothesis remains unsolved although modern computer calculations have shown that the first  trillion zeros lie on the critical line the riemann zeta function ?s is defined for all complex numbers s ?  it has zeros at the negative even integers ie at s =        these are called the trivial zeros the riemann hypothesis is concerned with the non trivial zeros and states that", "  mathematics from greek knowledge study learning is the study of quantity structure space and change mathematicians seek out patterns and formulate new conjectures mathematicians resolve the truth or falsity of conjectures by mathematical proofs which are arguments sufficient to convince other mathematicians of their validity the research required to solve mathematical problems can take years or even centuries of sustained inquiry however mathematical proofs are less formal and painstaking than proofs in mathematical logic since the pioneering work of giuseppe peano david hilbert and others on axiomatic systems in the late th century it has become customary to view mathematical research as establishing truth by rigorous deduction from appropriately chosen axioms and definitions when those mathematical structures are good models of real phenomena then mathematical reasoning often provides insight or predictions through the use of abstraction and logical reasoning mathematics evolved from counting calculation measurement and the systematic study of the shapes and motions of physical objects practical mathematics has been a human activity for as far back as written records exist rigorous arguments first appeared in greek mathematics most notably in euclid s elements mathematics continued to develop for example in china in  bc in india in ad citation needed and in the muslim world in ad  until the renaissance when mathematical innovations interacting with new scientific discoveries led to a rapid increase in the rate of mathematical discovery that continues to the present day", "  the evolution of mathematics might be seen as an ever increasing series of abstractions or alternatively an expansion of subject matter the first abstraction which is shared by many animals was probably that of numbers: the realization that a collection of two apples and a collection of two oranges for example have something in common namely quantity of their members in addition to recognizing how to count physical objects prehistoric peoples also recognized how to count abstract quantities like time   days seasons years elementary arithmetic addition subtraction multiplication and division naturally followed since numeracy pre dated writing further steps were needed for recording numbers such as tallies or the knotted strings called quipu used by the inca to store numerical datacitation needed numeral systems have been many and diverse with the first known written numerals created by egyptians in middle kingdom texts such as the rhind mathematical papyruscitation neededmayan numerals the earliest uses of mathematics were in trading land measurement painting and weaving patterns and the recording of time more complex mathematics did not appear until around  bc when the babylonians and egyptians began using arithmetic algebra and geometry for taxation and other financial calculations for building and construction and for astronomy the systematic study of mathematics in its own right began with the ancient greeks between  and  bc", " mathematics arises from many different kinds of problems at first these were found in commerce land measurement architecture and later astronomy nowadays all sciences suggest problems studied by mathematicians and many problems arise within mathematics itself for example the physicist richard feynman invented the path integral formulation of quantum mechanics using a combination of mathematical reasoning and physical insight and today s string theory a still developing scientific theory which attempts to unify the four fundamental forces of nature continues to inspire new mathematics some mathematics is only relevant in the area that inspired it and is applied to solve further problems in that area but often mathematics inspired by one area proves useful in many areas and joins the general stock of mathematical concepts a distinction is often made between pure mathematics and applied mathematics however pure mathematics topics often turn out to have applications eg number theory in cryptography this remarkable fact that even the  purest  mathematics often turns out to have practical applications is what eugene wigner has called  the unreasonable effectiveness of mathematics  as in most areas of study the explosion of knowledge in the scientific age has led to specialization: there are now hundreds of specialized areas in mathematics and the latest mathematics subject classification runs to  pages several areas of applied mathematics have merged with related traditions outside of mathematics and become disciplines in their own right including statistics operations research and computer science","  mathematical language can be difficult to understand for beginners words such as or and only have more precise meanings than in everyday speech moreover words such as open and field have been given specialized mathematical meanings technical terms such as homeomorphism and integrable have precise meanings in mathematics additionally shorthand phrases such as  iff  for  if and only if  belong to mathematical jargon there is a reason for special notation and technical vocabulary: mathematics requires more precision than everyday speech mathematicians refer to this precision of language and logic as  rigor  mathematical proof is fundamentally a matter of rigor mathematicians want their theorems to follow from axioms by means of systematic reasoning this is to avoid mistaken  theorems  based on fallible intuitions of which many instances have occurred in the history of the subject the level of rigor expected in mathematics has varied over time: the greeks expected detailed arguments but at the time of isaac newton the methods employed were less rigorous problems inherent in the definitions used by newton would lead to a resurgence of careful analysis and formal proof in the th century misunderstanding the rigor is a cause for some of the common misconceptions of mathematics today mathematicians continue to argue among themselves about computer assisted proofs since large computations are hard to verify such proofs may not be sufficiently rigorous"]
